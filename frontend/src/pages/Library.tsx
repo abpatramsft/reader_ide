@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Upload, Trash2, User, Calendar } from "lucide-react";
-import { fetchBooks, uploadEpub, deleteBook } from "../api";
+import { BookOpen, Upload, Trash2, User, Calendar, Key, LogOut, CheckCircle, AlertCircle } from "lucide-react";
+import { fetchBooks, uploadEpub, deleteBook, fetchAuthStatus, submitToken, logout } from "../api";
 import type { BookMeta } from "../types";
 import "./Library.css";
 
@@ -12,6 +12,13 @@ export default function Library() {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Auth state
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [tokenInput, setTokenInput] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
 
   const loadBooks = useCallback(async () => {
     try {
@@ -29,6 +36,38 @@ export default function Library() {
   useEffect(() => {
     loadBooks();
   }, [loadBooks]);
+
+  // Check auth status on mount
+  useEffect(() => {
+    fetchAuthStatus()
+      .then((s) => setAuthenticated(s.authenticated))
+      .catch(() => setAuthenticated(false))
+      .finally(() => setAuthChecking(false));
+  }, []);
+
+  const handleTokenSubmit = async () => {
+    if (!tokenInput.trim()) return;
+    setAuthSubmitting(true);
+    setAuthError(null);
+    try {
+      const res = await submitToken(tokenInput.trim());
+      setAuthenticated(res.authenticated);
+      setTokenInput("");
+    } catch (e: any) {
+      setAuthError(e.message || "Authentication failed");
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setAuthenticated(false);
+    } catch {
+      // ignore
+    }
+  };
 
   const handleUpload = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".epub")) {
@@ -83,6 +122,65 @@ export default function Library() {
           Your personal book library — Upload an EPUB to start reading
         </p>
       </header>
+
+      {/* GitHub Authentication */}
+      <div className={`auth-section ${authenticated ? "auth-connected" : ""}`}>
+        {authChecking ? (
+          <p className="auth-checking">Checking authentication...</p>
+        ) : authenticated ? (
+          <div className="auth-status-row">
+            <CheckCircle size={18} className="auth-icon-ok" />
+            <span className="auth-label">Copilot connected</span>
+            <button className="auth-logout-btn" onClick={handleLogout} title="Disconnect">
+              <LogOut size={14} />
+              Disconnect
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="auth-prompt-row">
+              <Key size={18} className="auth-icon-key" />
+              <span className="auth-label">
+                Enter your GitHub Personal Access Token to enable AI chat
+              </span>
+            </div>
+            <div className="auth-input-row">
+              <input
+                type="password"
+                className="auth-token-input"
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleTokenSubmit()}
+                disabled={authSubmitting}
+              />
+              <button
+                className="auth-submit-btn"
+                onClick={handleTokenSubmit}
+                disabled={authSubmitting || !tokenInput.trim()}
+              >
+                {authSubmitting ? "Connecting..." : "Connect"}
+              </button>
+            </div>
+            {authError && (
+              <div className="auth-error">
+                <AlertCircle size={14} />
+                {authError}
+              </div>
+            )}
+            <p className="auth-hint">
+              Needs <code>copilot</code> scope.{" "}
+              <a
+                href="https://github.com/settings/tokens"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Create a token
+              </a>
+            </p>
+          </>
+        )}
+      </div>
 
       {/* Upload Zone */}
       <div

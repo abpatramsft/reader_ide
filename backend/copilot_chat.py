@@ -246,9 +246,24 @@ class ChatManager:
         self._client: Optional[CopilotClient] = None
         self._sessions: dict = {}  # (book_id, model) -> session
         self._lock = asyncio.Lock()
+        self._token: Optional[str] = None
 
-    async def start(self):
-        """Start the CopilotClient (call once on app startup)."""
+    @property
+    def is_authenticated(self) -> bool:
+        """True if a token is set and the client is running."""
+        return self._client is not None
+
+    @property
+    def has_token(self) -> bool:
+        return self._token is not None or os.environ.get("GITHUB_TOKEN") is not None
+
+    async def start(self, token: Optional[str] = None):
+        """Start the CopilotClient. If token is provided, set GITHUB_TOKEN env var."""
+        if token:
+            self._token = token
+            os.environ["GITHUB_TOKEN"] = token
+        elif self._token:
+            os.environ["GITHUB_TOKEN"] = self._token
         self._client = CopilotClient()
         await self._client.start()
 
@@ -258,6 +273,16 @@ class ChatManager:
             await self._client.stop()
             self._client = None
         self._sessions.clear()
+
+    async def restart_with_token(self, token: str):
+        """Stop any existing client and restart with a new token."""
+        await self.stop()
+        await self.start(token=token)
+
+    def clear_token(self):
+        """Remove stored token and env var."""
+        self._token = None
+        os.environ.pop("GITHUB_TOKEN", None)
 
     def _build_system_message(self, book_id: str) -> str:
         """Build a grounding system prompt for the book (static — no chapter text)."""

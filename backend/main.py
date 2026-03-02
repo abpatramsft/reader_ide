@@ -42,11 +42,15 @@ chat_manager = ChatManager(data_dir=DATA_DIR)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start/stop the CopilotClient with the server."""
-    try:
-        await chat_manager.start()
-        print("✅ Copilot SDK client started")
-    except Exception as e:
-        print(f"⚠️  Copilot SDK failed to start (chat will be unavailable): {e}")
+    # Try to auto-start if GITHUB_TOKEN is already in the environment
+    if os.environ.get("GITHUB_TOKEN"):
+        try:
+            await chat_manager.start()
+            print("✅ Copilot SDK client started (env token)")
+        except Exception as e:
+            print(f"⚠️  Copilot SDK failed to start: {e}")
+    else:
+        print("ℹ️  No GITHUB_TOKEN found — waiting for user to authenticate via UI")
     yield
     try:
         await chat_manager.stop()
@@ -87,6 +91,47 @@ class ChatRequest(BaseModel):
     message: str
     current_chapter: Optional[str] = None
     model: Optional[str] = None
+
+
+class TokenRequest(BaseModel):
+    token: str
+
+
+# ---------------------------------------------------------------------------
+# Routes — Authentication
+# ---------------------------------------------------------------------------
+
+@app.get("/api/auth/status")
+async def auth_status():
+    """Check whether the Copilot SDK is authenticated and ready."""
+    return {
+        "authenticated": chat_manager.is_authenticated,
+        "has_token": chat_manager.has_token,
+    }
+
+
+@app.post("/api/auth/token")
+async def set_token(req: TokenRequest):
+    """Set GitHub token and (re)start the Copilot SDK client."""
+    token = req.token.strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="Token cannot be empty")
+    try:
+        await chat_manager.restart_with_token(token)
+        return {"status": "ok", "authenticated": True}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to start Copilot SDK with the provided token: {e}",
+        )
+
+
+@app.post("/api/auth/logout")
+async def logout():
+    """Clear token and stop the Copilot SDK client."""
+    await chat_manager.stop()
+    chat_manager.clear_token()
+    return {"status": "ok", "authenticated": False}
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +290,7 @@ async def chat(book_id: str, req: ChatRequest):
     if not chat_manager._client:
         raise HTTPException(
             status_code=503,
-            detail="Copilot SDK is not available. Ensure copilot CLI is installed and authenticated.",
+            detail="Copilot SDK is not connected. Please provide your GitHub token on the landing page first.",
         )
 
     model = req.model if req.model in ALLOWED_MODELS else "gpt-4.1"

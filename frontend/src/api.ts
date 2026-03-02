@@ -4,6 +4,43 @@ import type { BookMeta, ToolEvent, Skill, Agent, NoteInfo } from "./types";
 
 const API_BASE = "";
 
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+export interface AuthStatus {
+  authenticated: boolean;
+  has_token: boolean;
+}
+
+export async function fetchAuthStatus(): Promise<AuthStatus> {
+  const res = await fetch(`${API_BASE}/api/auth/status`);
+  if (!res.ok) throw new Error("Failed to check auth status");
+  return res.json();
+}
+
+export async function submitToken(token: string): Promise<{ status: string; authenticated: boolean }> {
+  const res = await fetch(`${API_BASE}/api/auth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Authentication failed" }));
+    throw new Error(err.detail || "Authentication failed");
+  }
+  return res.json();
+}
+
+export async function logout(): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/auth/logout`, { method: "POST" });
+  if (!res.ok) throw new Error("Logout failed");
+}
+
+// ---------------------------------------------------------------------------
+// Skills & Agents
+// ---------------------------------------------------------------------------
+
 export async function fetchSkills(): Promise<Skill[]> {
   const res = await fetch(`${API_BASE}/api/skills`);
   if (!res.ok) throw new Error("Failed to fetch skills");

@@ -34,6 +34,152 @@
   color: #858585;
 }
 
+/* Auth Section */
+.auth-section {
+  margin: 20px 40px 0;
+  padding: 16px 20px;
+  background: #252526;
+  border: 1px solid #3c3c3c;
+  border-radius: 8px;
+}
+
+.auth-section.auth-connected {
+  border-color: #2ea04366;
+  background: #1a2e1a;
+}
+
+.auth-checking {
+  margin: 0;
+  font-size: 13px;
+  color: #858585;
+}
+
+.auth-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-icon-ok {
+  color: #3fb950;
+  flex-shrink: 0;
+}
+
+.auth-icon-key {
+  color: #d29922;
+  flex-shrink: 0;
+}
+
+.auth-label {
+  font-size: 14px;
+  color: #cccccc;
+}
+
+.auth-logout-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid #3c3c3c;
+  color: #858585;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.auth-logout-btn:hover {
+  border-color: #be1100;
+  color: #f48771;
+}
+
+.auth-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.auth-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.auth-token-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: #1e1e1e;
+  border: 1px solid #3c3c3c;
+  border-radius: 4px;
+  color: #cccccc;
+  font-size: 13px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.auth-token-input:focus {
+  border-color: #007acc;
+}
+
+.auth-token-input::placeholder {
+  color: #555;
+}
+
+.auth-submit-btn {
+  padding: 8px 20px;
+  background: #007acc;
+  border: none;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  background: #0098ff;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f48771;
+  font-size: 12px;
+}
+
+.auth-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.auth-hint code {
+  background: #1e1e1e;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.auth-hint a {
+  color: #4a9eff;
+  text-decoration: none;
+}
+
+.auth-hint a:hover {
+  text-decoration: underline;
+}
+
 /* Upload Zone */
 .upload-zone {
   margin: 24px 40px;
