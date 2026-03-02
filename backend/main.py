@@ -9,9 +9,10 @@ import tempfile
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from epub_processor import (
@@ -56,10 +57,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Reader IDE API", lifespan=lifespan)
 
-# CORS — allow the Vite dev server
+# CORS — allow the Vite dev server and same-origin in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -268,6 +269,27 @@ async def chat(book_id: str, req: ChatRequest):
 # ---------------------------------------------------------------------------
 # Run
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Static file serving (production — serves built React app)
+# ---------------------------------------------------------------------------
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+if os.path.isdir(STATIC_DIR):
+    # Serve static assets (JS, CSS, images)
+    app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(request: Request, full_path: str):
+        """Serve the React SPA for any non-API route."""
+        # If the path points to an actual file in static/, serve it
+        file_path = os.path.join(STATIC_DIR, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise serve index.html (React Router handles the rest)
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
 
 if __name__ == "__main__":
     import uvicorn

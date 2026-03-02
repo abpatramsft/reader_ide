@@ -21,10 +21,29 @@ Upload EPUB files → read them in a split-panel IDE interface → chat with Cop
 - **Python 3.10+**
 - **Node.js 18+**
 - **GitHub Copilot CLI** installed and authenticated (`copilot --version`)
+- **Docker** (optional, for containerized deployment)
 
 ## Quick Start
 
-### 1. Backend
+### Option A: Docker (recommended)
+
+```bash
+# Build the image
+docker build -t reader-ide .
+
+# Run the container
+docker run -p 8000:8000 reader-ide
+```
+
+Open **http://localhost:8000** — the frontend and backend are both served from one container.
+
+> **Note:** The Copilot CLI inside the container needs authentication.
+> Pass your GitHub token via environment variable:
+> ```bash
+> docker run -p 8000:8000 -e GITHUB_TOKEN=<your-token> reader-ide
+> ```
+
+### 1. Backend (local)
 
 ```bash
 cd backend
@@ -102,6 +121,8 @@ reader-ide/
 │   │       └── CopilotChat.tsx # Chat panel with SSE streaming
 │   └── package.json
 ├── data/                     # Runtime — processed book folders (contents gitignored)
+├── Dockerfile                # Multi-stage build (frontend + backend in one image)
+├── .dockerignore
 └── README.md
 ```
 
