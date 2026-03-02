@@ -1,0 +1,31 @@
+# Data directory (runtime book storage)
+data/
+
+# Windows reserved file
+nul
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads temp
+*.epub.tmp
