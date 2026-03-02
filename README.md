@@ -138,6 +138,42 @@ reader-ide/
 | `GET` | `/api/books/{id}/chapters/{file}` | Read chapter text |
 | `POST` | `/api/books/{id}/chat` | Chat (SSE stream) |
 
+## CI/CD — Deploy to Azure
+
+The project includes a GitHub Actions workflow and Bicep infrastructure template for deploying to **Azure Container Apps** via **Azure Container Registry**.
+
+### One-time Azure setup
+
+```bash
+# Create a resource group
+az group create --name rg-reader-ide --location eastus
+
+# Deploy ACR + Container Apps Environment + Container App
+az deployment group create \
+  --resource-group rg-reader-ide \
+  --template-file infra/main.bicep \
+  --parameters appName=reader-ide githubToken=<your-github-token>
+
+# Note the outputs: acrLoginServer, containerAppUrl
+```
+
+### Configure GitHub Secrets
+
+Add these secrets to your GitHub repository (**Settings → Secrets → Actions**):
+
+| Secret | Value |
+|--------|-------|
+| `AZURE_CREDENTIALS` | Output of `az ad sp create-for-rbac --sdk-auth --role Contributor --scopes /subscriptions/<sub-id>/resourceGroups/rg-reader-ide` |
+| `ACR_NAME` | ACR resource name, e.g. `readerideacr` (not the full `.azurecr.io` URL) |
+| `AZURE_RESOURCE_GROUP` | `rg-reader-ide` |
+| `AZURE_CONTAINER_APP_NAME` | `reader-ide-app` |
+
+> The service principal needs **AcrPush** role on the ACR and **Contributor** on the Container App.
+
+### Run the pipeline
+
+Go to **Actions → Deploy to Azure Container Apps → Run workflow**. You can optionally specify a custom image tag; it defaults to the git SHA.
+
 ## How the Chat Works
 
 The Copilot chat is grounded to the book you're reading:

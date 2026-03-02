@@ -1,0 +1,109 @@
+# ── CI/CD: ACR Build → Deploy to Azure Container Apps ────────────────────
+#
+# Uses ACR Tasks to build the Docker image in Azure (no local Docker needed).
+# The image is built and stored directly in the registry — zero push latency.
+#
+# Trigger: manual (workflow_dispatch) with optional inputs.
+#
+# Prerequisites (one-time setup):
+#   1. Create an Azure Container Registry (ACR) — Basic SKU or higher
+#   2. Create an Azure Container Apps Environment + Container App
+#   3. Add the following GitHub repository secrets:
+#        AZURE_CREDENTIALS        – Service principal JSON (az ad sp create-for-rbac --sdk-auth)
+#        ACR_NAME                 – ACR resource name (e.g. readerideacr, NOT the .azurecr.io URL)
+#        AZURE_RESOURCE_GROUP     – Resource group containing the Container App
+#        AZURE_CONTAINER_APP_NAME – Name of the Container App
+#
+#   The SP needs the "AcrPush" role on the ACR and "Contributor" on the Container App.
+
+name: Deploy to Azure Container Apps
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image tag (default: git SHA)"
+        required: false
+        default: ""
+      environment:
+        description: "Target environment"
+        required: false
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  IMAGE_NAME: reader-ide
+
+jobs:
+  # ── Job 1: Build in ACR ──────────────────────────────────────────────────
+  build:
+    name: Build with ACR Tasks
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+      full_image: ${{ steps.meta.outputs.full_image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Determine image tag
+        id: meta
+        run: |
+          TAG="${{ github.event.inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="${GITHUB_SHA::8}"
+          fi
+          ACR_LOGIN_SERVER=$(az acr show --name ${{ secrets.ACR_NAME }} --query loginServer -o tsv)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "full_image=${ACR_LOGIN_SERVER}/${{ env.IMAGE_NAME }}:$TAG" >> "$GITHUB_OUTPUT"
+          echo "acr_login_server=${ACR_LOGIN_SERVER}" >> "$GITHUB_OUTPUT"
+          echo "📦 Image: ${ACR_LOGIN_SERVER}/${{ env.IMAGE_NAME }}:$TAG"
+
+      - name: Build & push with ACR Tasks
+        run: |
+          az acr build \
+            --registry ${{ secrets.ACR_NAME }} \
+            --image ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }} \
+            --image ${{ env.IMAGE_NAME }}:latest \
+            --file ./Dockerfile \
+            .
+
+  # ── Job 2: Deploy to Azure Container Apps ────────────────────────────────
+  deploy:
+    name: Deploy to Container Apps
+    runs-on: ubuntu-latest
+    needs: build
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name ${{ secrets.AZURE_CONTAINER_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image ${{ needs.build.outputs.full_image }}
+
+      - name: Print deployment summary
+        run: |
+          FQDN=$(az containerapp show \
+            --name ${{ secrets.AZURE_CONTAINER_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          echo "✅ Deployed ${{ needs.build.outputs.full_image }}"
+          echo "   Environment: ${{ github.event.inputs.environment || 'production' }}"
+          echo "   URL: https://$FQDN"
