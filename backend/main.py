@@ -77,6 +77,12 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
+    # In production (Docker), serve the React SPA; otherwise return health JSON
+    static_index = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "static", "index.html"
+    )
+    if os.path.isfile(static_index):
+        return FileResponse(static_index)
     return {"status": "ok", "service": "Reader IDE API"}
 
 
