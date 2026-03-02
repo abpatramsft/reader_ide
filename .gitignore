@@ -1,5 +1,6 @@
-# Data directory (runtime book storage)
-data/
+# Data directory (runtime book storage — keep folder, ignore contents)
+data/*
+!data/.gitkeep
 
 # Windows reserved file
 nul

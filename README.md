@@ -74,7 +74,19 @@ reader-ide/
 │   ├── main.py              # FastAPI server (routes, CORS, lifecycle)
 │   ├── epub_processor.py    # EPUB → chapter .txt files (adapted from reader3.py)
 │   ├── copilot_chat.py      # Copilot SDK session manager + SSE streaming
-│   └── requirements.txt     # Python dependencies
+│   ├── requirements.txt     # Python dependencies
+│   ├── agents/              # AI agent persona definitions
+│   │   ├── archivist.agent.md
+│   │   ├── critic.agent.md
+│   │   ├── debater.agent.md
+│   │   ├── historian.agent.md
+│   │   └── philosopher.agent.md
+│   └── skills/              # Copilot skill prompts
+│       ├── explain.skill.md
+│       ├── recap.skill.md
+│       ├── summary.skill.md
+│       ├── theme.skill.md
+│       └── timeline.skill.md
 ├── frontend/
 │   ├── src/
 │   │   ├── api.ts           # API client (fetch + SSE streaming)
@@ -86,9 +98,10 @@ reader-ide/
 │   │   └── components/
 │   │       ├── FileTree.tsx  # Explorer sidebar
 │   │       ├── TextViewer.tsx # Chapter text display
+│   │       ├── NotesPanel.tsx # Notes sidebar panel
 │   │       └── CopilotChat.tsx # Chat panel with SSE streaming
 │   └── package.json
-├── data/                     # Runtime — processed book folders (gitignored)
+├── data/                     # Runtime — processed book folders (contents gitignored)
 └── README.md
 ```
 
