@@ -6,6 +6,10 @@ Upload EPUB files → read them in a split-panel IDE interface → chat with Cop
 
 ![Architecture](https://img.shields.io/badge/stack-FastAPI%20%2B%20React%20%2B%20Copilot%20SDK-blue)
 
+![Reader IDE Screenshot](docs/reader-ide-screenshot.png)
+
+Reader IDE recreates the feel of a code editor — but for books. Open any EPUB, and its chapters appear as files in a sidebar explorer. Read in a tabbed center panel with breadcrumb navigation, while an AI-powered Copilot chat sits in the right panel, grounded to the book you're reading. Ask it to recap the story so far, explain a passage, trace a theme, or debate a character's choices — using built-in skills (`/recap`, `/explain`, `/theme`) and switchable agent personas (Critic, Philosopher, Historian, and more). It's a reading companion that knows the text.
+
 ## Features
 
 - **Library Landing Page** — Upload EPUBs, browse your book collection
