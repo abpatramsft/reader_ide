@@ -183,8 +183,10 @@ The Copilot chat is grounded to the book you're reading:
 3. The AI only discusses the book — themes, characters, plot, writing style
 4. Responses stream back via **Server-Sent Events** for real-time display
 
-## Credits
+## Credits & Inspiration
 
-- EPUB processing adapted from [karpathy/reader3](https://github.com/karpathy/reader3)
-- AI chat powered by [GitHub Copilot SDK](https://github.com/github/copilot-sdk)
-- VS Code theme colors from [VS Code Dark+ theme](https://github.com/microsoft/vscode)
+This project is loosely inspired by Andrej Karpathy's [reader3](https://github.com/karpathy/reader3) — a minimal EPUB reader with an AI reading companion. Reader IDE extends the idea with a VS Code-style multi-panel interface, agents/skills, and streaming chat via the GitHub Copilot SDK.
+
+- **EPUB processing** adapted from [karpathy/reader3](https://github.com/karpathy/reader3)
+- **AI chat** powered by [GitHub Copilot SDK](https://github.com/github/copilot-sdk)
+- **VS Code theme colors** from [VS Code Dark+ theme](https://github.com/microsoft/vscode)
